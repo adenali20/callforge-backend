@@ -51,7 +51,7 @@ jobs:
         run: |
           SHA=$(git rev-parse --short HEAD)
           IMAGE=adenli/callforge-backend
-          TAG=${ENV}-${SHA}
+          TAG=${SHA}
 
           docker build -t $IMAGE:$TAG .
           docker push $IMAGE:$TAG
