@@ -1,0 +1,63 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - develop
+      - qa
+      - uat
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup JDK
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # 3️⃣ Build JAR
+      - name: Build with Gradle
+        run: ./gradlew clean build -x test
+
+      # 4️⃣ Set environment name
+      - name: Set ENV
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
+            echo "ENV=dev" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF_NAME}" == "qa" ]]; then
+            echo "ENV=qa" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF_NAME}" == "uat" ]]; then
+            echo "ENV=uat" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            echo "ENV=prod" >> $GITHUB_ENV
+          fi
+
+      # 5️⃣ Docker login
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      # 6️⃣ Build & Push
+      - name: Build & Push Image
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          IMAGE=adenli/callforge-backend
+          TAG=${ENV}-${SHA}
+
+          docker build -t $IMAGE:$TAG .
+          docker push $IMAGE:$TAG
+
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+
+      # 7️⃣ Print result
+      - name: Output image
+        run: echo "Built image- adenli/callforge-backend:${IMAGE_TAG}"
