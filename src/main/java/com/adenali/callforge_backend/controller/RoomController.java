@@ -14,7 +14,8 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/rooms")
-@CrossOrigin(origins = "http://localhost:3000") // Allow your React app
+//@CrossOrigin(origins = "http://localhost:3000") // Allow your React app
+@CrossOrigin(origins = "https://dev.adenali.com") // Allow your React app
 public class RoomController {
 
     @Autowired

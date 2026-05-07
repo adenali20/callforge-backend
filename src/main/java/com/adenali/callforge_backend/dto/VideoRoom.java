@@ -18,5 +18,6 @@ public class VideoRoom {
     private boolean isSecure;
     private LocalDateTime startDate;
     private LocalDateTime expiryDate;
-    private String mediaNodeUrl = "http://localhost:3002"; // Default for now
+//    private String mediaNodeUrl = "http://localhost:3002"; // Default for now
+    private String mediaNodeUrl = "https://dev.adenali.com"; // Default for now
 }
