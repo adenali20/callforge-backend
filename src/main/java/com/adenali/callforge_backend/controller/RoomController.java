@@ -24,15 +24,22 @@ public class RoomController {
     @PostMapping
     public ResponseEntity<Map<String, String>> createRoom(@RequestBody RoomRequest request) {
         VideoRoom room = new VideoRoom();
-        room.setId(UUID.randomUUID().toString()); // The magic UUID for the link
+        room.setId(UUID.randomUUID().toString());
         room.setRoomName(request.getRoomName());
         room.setSecure(request.isSecure());
         room.setPasscode(request.getPasscode());
-        room.setStartDate(request.getStartDate());
-        room.setExpiryDate(request.getStartDate().plusHours(request.getDurationHours()));
+
+        if (request.isNonExpiry()) {
+            // ASAP logic: Start now, never expire
+            room.setStartDate(LocalDateTime.now());
+            room.setExpiryDate(null);
+        } else {
+            // Scheduled logic
+            room.setStartDate(request.getStartDate());
+            room.setExpiryDate(request.getStartDate().plusHours(request.getDurationHours()));
+        }
 
         roomRepository.save(room);
-
         return ResponseEntity.ok(Map.of("roomId", room.getId()));
     }
 
@@ -42,20 +49,19 @@ public class RoomController {
             LocalDateTime now = LocalDateTime.now();
             String status;
 
-            if (now.isBefore(room.getStartDate())) {
-                status = "EARLY";
-            } else if (now.isAfter(room.getExpiryDate())) {
-                status = "EXPIRED";
-            } else {
+            // If expiryDate is null, it's a permanent/ASAP room
+            if (room.getExpiryDate() == null || (now.isAfter(room.getStartDate()) && now.isBefore(room.getExpiryDate()))) {
                 status = "STARTED";
+            } else if (now.isBefore(room.getStartDate())) {
+                status = "EARLY";
+            } else {
+                status = "EXPIRED";
             }
 
-            // Return a DTO so we don't leak the passcode
             return ResponseEntity.ok(Map.of(
                     "roomName", room.getRoomName(),
                     "status", status,
                     "isSecure", room.isSecure(),
-                    "startDate", room.getStartDate(),
                     "mediaNodeUrl", room.getMediaNodeUrl()
             ));
         }).orElse(ResponseEntity.notFound().build());

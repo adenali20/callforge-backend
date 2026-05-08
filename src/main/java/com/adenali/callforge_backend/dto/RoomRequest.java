@@ -14,5 +14,6 @@ public class RoomRequest {
     private boolean isSecure;
     private String passcode;
     private LocalDateTime startDate;
-    private int durationHours;
+    private Integer durationHours; // Use Integer so it can be null
+    private boolean isNonExpiry; // New field
 }
